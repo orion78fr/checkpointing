@@ -10,6 +10,7 @@ public class Initializer implements Control {
 
 	public Initializer(String prefix) {
 		this.prefix = prefix;
+		Constants.loadConstants();
 	}
 
 	@Override

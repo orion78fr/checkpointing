@@ -29,13 +29,11 @@ public class MatrixTransport implements Protocol {
 		return this;
 	}
 
-	// envoi d'un message: il suffit de l'ajouter a la file d'evenements
 	public void send(Node src, Node dest, Object msg, int pid) {
 		long delay = getLatency(src, dest);
 		EDSimulator.add(delay, msg, dest, pid);
 	}
 
-	// latence random entre la borne min et la borne max
 	public long getLatency(Node src, Node dest) {
 		return matrix[(int) src.getID()][(int) dest.getID()];
 	}
