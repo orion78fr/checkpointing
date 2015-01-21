@@ -49,8 +49,8 @@ public class App implements EDProtocol{
 		switch(mess.getType()){
 		case APPLICATIVE:
 			int sender = mess.getSender();
+			System.out.printf("[%d %d] Message n°%d from %d received\n", CommonState.getTime(), this.nodeId, received[sender], sender);
 			received[sender]++;
-			System.out.printf("[%d %d] Message %d from %d received\n", CommonState.getTime(), this.nodeId, received[sender], sender);
 			break;
 		case CHECKPOINT:
 			System.out.printf("[%d %d] Checkpoint n°%d, State %d\n", CommonState.getTime(), this.nodeId, checkpoints.size()+1, this.state);
@@ -63,8 +63,9 @@ public class App implements EDProtocol{
 			
 			break;
 		case STEP:
-			System.out.printf("[%d %d] State change : %d -> %d\n", CommonState.getTime(), this.nodeId, this.state, this.state+1);
+			System.out.printf("[%d %d] State change : %d -> %d", CommonState.getTime(), this.nodeId, this.state, this.state+1);
 			doStep();
+			System.out.println();
 			break;
 		}
 	}
@@ -107,10 +108,12 @@ public class App implements EDProtocol{
 		if(r <= Constants.getProbaUnicast()) {
 			// Unicast
 			int dest;
-			while((dest = CommonState.r.nextInt(Network.size())) == this.nodeId);
+			while((dest = CommonState.r.nextInt(Network.size())) == this.nodeId); // Tirer un id différent du sien
+			System.out.printf(" and Sending message n°%d to %d", sent[dest], dest);
 			send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(dest));
 		} else if(r >= 1 - Constants.getProbaBroadcast()){
 			// Bcast
+			System.out.printf(" and Broadcasting message");
 			for(int i = 0; i < Network.size(); i++){
 				if(i != this.nodeId){
 					send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(i));
