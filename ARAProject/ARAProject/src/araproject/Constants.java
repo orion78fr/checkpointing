@@ -13,6 +13,7 @@ public class Constants {
 	private static int stepDelayMax;
 	private static int checkpointDelayMin;
 	private static int checkpointDelayMax;
+	private static String outputFile;
 	
 	private static boolean isDomino;
 	
@@ -27,6 +28,8 @@ public class Constants {
 		
 		// TODO Domino effect forcing
 		isDomino = Configuration.getBoolean("simulation.isDomino");
+		
+		outputFile = Configuration.getString("simulation.outputFile", null);
 	}
 
 	public static double getProbaUnicast() {
@@ -55,6 +58,10 @@ public class Constants {
 
 	public static boolean isDomino() {
 		return isDomino;
+	}
+
+	public static String getOutputFile() {
+		return outputFile;
 	}
 	
 }

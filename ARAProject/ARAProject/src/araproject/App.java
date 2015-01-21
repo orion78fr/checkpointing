@@ -1,6 +1,5 @@
 package araproject;
 
-import java.awt.TrayIcon.MessageType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,8 +45,28 @@ public class App implements EDProtocol{
 
 	@Override
 	public void processEvent(Node node, int pid, Object event) {
-		// TODO Auto-generated method stub
-		
+		Message mess = (Message)event;
+		switch(mess.getType()){
+		case APPLICATIVE:
+			int sender = mess.getSender();
+			received[sender]++;
+			System.out.printf("[%d %d] Message %d from %d received\n", CommonState.getTime(), this.nodeId, received[sender], sender);
+			break;
+		case CHECKPOINT:
+			System.out.printf("[%d %d] Checkpoint n°%d, State %d\n", CommonState.getTime(), this.nodeId, checkpoints.size()+1, this.state);
+			doCheckPoint();
+			break;
+		case ROLLBACKSTART:
+			
+			break;
+		case ROLLBACKSTEP:
+			
+			break;
+		case STEP:
+			System.out.printf("[%d %d] State change : %d -> %d\n", CommonState.getTime(), this.nodeId, this.state, this.state+1);
+			doStep();
+			break;
+		}
 	}
 	
 	public void setTransportLayer(int nodeId) {
@@ -56,7 +75,7 @@ public class App implements EDProtocol{
 	}
 	
 	public Object clone() {
-		return this;
+		return new App(this.prefix);
 	}
 	
 	public void send(Message msg, Node dest) {
@@ -87,7 +106,8 @@ public class App implements EDProtocol{
 		double r = CommonState.r.nextDouble();
 		if(r <= Constants.getProbaUnicast()) {
 			// Unicast
-			int dest = CommonState.r.nextInt(Network.size());
+			int dest;
+			while((dest = CommonState.r.nextInt(Network.size())) == this.nodeId);
 			send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(dest));
 		} else if(r >= 1 - Constants.getProbaBroadcast()){
 			// Bcast
