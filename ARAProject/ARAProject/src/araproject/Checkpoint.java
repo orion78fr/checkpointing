@@ -9,6 +9,7 @@ public class Checkpoint {
 
 	public Checkpoint(int state, int[] sent, int[] received) {
 		this.state = state;
+		// Defensives copy to prevent modifications
 		this.sent = Arrays.copyOf(sent, sent.length);
 		this.received = Arrays.copyOf(received, received.length);
 	}

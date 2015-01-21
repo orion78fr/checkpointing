@@ -22,6 +22,8 @@ public class App implements EDProtocol{
 	private int[] received;
 	private Stack<Checkpoint> checkpoints;
 	private int rollbackNbr;
+	
+	private static volatile int prevDominoId;
 
 	public App(String prefix) {
 		this.prefix = prefix;
@@ -54,6 +56,17 @@ public class App implements EDProtocol{
 			int sender = mess.getSender();
 			System.out.printf("[%d %d] Message n°%d from %d received\n", CommonState.getTime(), this.nodeId, received[sender], sender);
 			received[sender]++;
+			if(Constants.isDomino()){
+				if(prevDominoId == sender){
+					synchronized(App.class){
+						if(prevDominoId == sender){
+							prevDominoId = this.nodeId;
+						}
+					}
+					System.out.printf(" (Forced checkpoint)", CommonState.getTime(), this.nodeId);
+					doCheckPoint();
+				}
+			}
 			break;
 		case CHECKPOINT:
 			System.out.printf("[%d %d] Checkpoint n°%d, State %d\n", CommonState.getTime(), this.nodeId, checkpoints.size()+1, this.state);
@@ -67,7 +80,7 @@ public class App implements EDProtocol{
 			break;
 		case STEP:
 			System.out.printf("[%d %d] State change : %d -> %d", CommonState.getTime(), this.nodeId, this.state, this.state+1);
-			doStep();
+			doStep(mess.getRollbackNbr());
 			System.out.println();
 			break;
 		}
@@ -114,7 +127,7 @@ public class App implements EDProtocol{
 	}
 	
 	private void doRollback(Message msg){
-		this.rollbackNbr = Math.max(this.rollbackNbr, msg.getRollbackNbr());
+		this.rollbackNbr = Math.max(this.rollbackNbr + 1, msg.getRollbackNbr());
 		
 		int from = msg.getSender();
 		if(received[from] > msg.getMsg()){
@@ -124,6 +137,8 @@ public class App implements EDProtocol{
 				c = checkpoints.pop();
 			} while (c.getReceived()[from] > msg.getMsg()); // Looking for a consistent rollback
 			
+			checkpoints.push(c); // The checkpoint is valid, so we can reuse it later
+			
 			System.out.printf("[%d %d] ROLLBACK - Rollback n°%d, forced by %d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, from, this.state, c.getState());
 			
 			rollbackTo(c);
@@ -132,16 +147,24 @@ public class App implements EDProtocol{
 	
 	private void doCheckPoint(){
 		// Next checkpoint
-		int delay = Constants.getCheckpointDelayMin() + CommonState.r.nextInt(Constants.getCheckpointDelayMax() - Constants.getCheckpointDelayMin() + 1);
-		EDSimulator.add(delay, new Message(Message.Type.CHECKPOINT, 0, rollbackNbr, this.nodeId), this.getMyNode(), this.mypid);
+		if(!Constants.isDomino()){ // If domino, we force checkpoint on message reception
+			int delay = Constants.getCheckpointDelayMin() + CommonState.r.nextInt(Constants.getCheckpointDelayMax() - Constants.getCheckpointDelayMin() + 1);
+			EDSimulator.add(delay, new Message(Message.Type.CHECKPOINT, 0, rollbackNbr, this.nodeId), this.getMyNode(), this.mypid);
+		}
 		
 		this.checkpoints.push(new Checkpoint(state, sent, received));
 	}
 	
-	private void doStep(){
+	private void doStep(int num){
 		// Next step
 		int delay = Constants.getStepDelayMin() + CommonState.r.nextInt(Constants.getStepDelayMax() - Constants.getStepDelayMin() + 1);
 		EDSimulator.add(delay, new Message(Message.Type.STEP, 0, rollbackNbr, this.nodeId), this.getMyNode(), this.mypid);
+		
+		if(num != this.rollbackNbr) { 
+			// Message to ignore (planned by previous rollback, prevents stepping during rollbacks
+			System.out.print(" (ignored because planned before rollback)");
+			return;
+		}
 		
 		state++;
 		
@@ -155,7 +178,7 @@ public class App implements EDProtocol{
 			send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(dest));
 		} else if(r >= 1 - Constants.getProbaBroadcast()){
 			// Bcast
-			System.out.printf(" and Broadcasting message");
+			System.out.print(" and Broadcasting message");
 			for(int i = 0; i < Network.size(); i++){
 				if(i != this.nodeId){
 					send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(i));
@@ -163,5 +186,11 @@ public class App implements EDProtocol{
 			}
 		}
 	}
+	/*
+	 if(Constants.isDomino()){
+			System.out.printf(" (Forced checkpoint)", CommonState.getTime(), this.nodeId);
+			doCheckPoint();
+		}
+	 */
 
 }

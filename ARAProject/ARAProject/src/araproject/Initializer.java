@@ -47,7 +47,7 @@ public class Initializer implements Control {
 		    EDSimulator.add(delay, new Message(Message.Type.STEP, 0, 0, -1), n, appPid);
 		}
 		
-		EDSimulator.add(22, new Message(Message.Type.ROLLBACKSTART, 0, 0, -1), Network.get(4), appPid);
+		EDSimulator.add(2000, new Message(Message.Type.ROLLBACKSTART, 0, 0, -1), Network.get(4), appPid);
 		
 		return false;
 	}
