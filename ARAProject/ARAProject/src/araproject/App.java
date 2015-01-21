@@ -1,7 +1,6 @@
 package araproject;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Stack;
 
 import peersim.config.Configuration;
 import peersim.core.CommonState;
@@ -21,7 +20,7 @@ public class App implements EDProtocol{
 	private int state;
 	private int[] sent;
 	private int[] received;
-	private List<Checkpoint> checkpoints;
+	private Stack<Checkpoint> checkpoints;
 	private int rollbackNbr;
 
 	public App(String prefix) {
@@ -40,7 +39,7 @@ public class App implements EDProtocol{
 			this.sent[i] = 0;
 			this.received[i] = 0;
 		}
-		this.checkpoints = new ArrayList<Checkpoint>();
+		this.checkpoints = new Stack<Checkpoint>();
 	}
 
 	@Override
@@ -48,6 +47,10 @@ public class App implements EDProtocol{
 		Message mess = (Message)event;
 		switch(mess.getType()){
 		case APPLICATIVE:
+			if(mess.getRollbackNbr() != this.rollbackNbr) { 
+				// Message to ignore
+				break;
+			}
 			int sender = mess.getSender();
 			System.out.printf("[%d %d] Message n°%d from %d received\n", CommonState.getTime(), this.nodeId, received[sender], sender);
 			received[sender]++;
@@ -57,10 +60,10 @@ public class App implements EDProtocol{
 			doCheckPoint();
 			break;
 		case ROLLBACKSTART:
-			
+			startRollback();
 			break;
 		case ROLLBACKSTEP:
-			
+			doRollback(mess);
 			break;
 		case STEP:
 			System.out.printf("[%d %d] State change : %d -> %d", CommonState.getTime(), this.nodeId, this.state, this.state+1);
@@ -79,7 +82,7 @@ public class App implements EDProtocol{
 		return new App(this.prefix);
 	}
 	
-	public void send(Message msg, Node dest) {
+	private void send(Message msg, Node dest) {
 		sent[(int) dest.getID()]++;
 		this.transport.send(getMyNode(), dest, msg, this.mypid);
 	}
@@ -88,12 +91,51 @@ public class App implements EDProtocol{
 		return Network.get(this.nodeId);
 	}
 	
+	private void rollbackTo(Checkpoint c) {
+		state = c.getState();
+		sent = c.getSent();
+		received = c.getReceived();
+		
+		for(int i = 0; i < Network.size(); i++){
+			if(i != this.nodeId){
+				this.transport.send(getMyNode(), Network.get(i), new Message(Message.Type.ROLLBACKSTEP, sent[i], this.rollbackNbr, this.nodeId), this.mypid);
+			}
+		}
+	}
+	
+	private void startRollback(){
+		rollbackNbr++;
+		
+		Checkpoint c = this.checkpoints.pop();
+		
+		System.out.printf("[%d %d] ROLLBACK - Initiating rollback n°%d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, this.state, c.getState());
+		
+		rollbackTo(c);
+	}
+	
+	private void doRollback(Message msg){
+		this.rollbackNbr = Math.max(this.rollbackNbr, msg.getRollbackNbr());
+		
+		int from = msg.getSender();
+		if(received[from] > msg.getMsg()){
+			// Rollback needed
+			Checkpoint c;
+			do {
+				c = checkpoints.pop();
+			} while (c.getReceived()[from] > msg.getMsg()); // Looking for a consistent rollback
+			
+			System.out.printf("[%d %d] ROLLBACK - Rollback n°%d, forced by %d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, from, this.state, c.getState());
+			
+			rollbackTo(c);
+		}
+	}
+	
 	private void doCheckPoint(){
 		// Next checkpoint
 		int delay = Constants.getCheckpointDelayMin() + CommonState.r.nextInt(Constants.getCheckpointDelayMax() - Constants.getCheckpointDelayMin() + 1);
 		EDSimulator.add(delay, new Message(Message.Type.CHECKPOINT, 0, rollbackNbr, this.nodeId), this.getMyNode(), this.mypid);
 		
-		this.checkpoints.add(new Checkpoint(state, sent, received));
+		this.checkpoints.push(new Checkpoint(state, sent, received));
 	}
 	
 	private void doStep(){
@@ -108,7 +150,7 @@ public class App implements EDProtocol{
 		if(r <= Constants.getProbaUnicast()) {
 			// Unicast
 			int dest;
-			while((dest = CommonState.r.nextInt(Network.size())) == this.nodeId); // Tirer un id différent du sien
+			while((dest = CommonState.r.nextInt(Network.size())) == this.nodeId); // Get an id different from self
 			System.out.printf(" and Sending message n°%d to %d", sent[dest], dest);
 			send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(dest));
 		} else if(r >= 1 - Constants.getProbaBroadcast()){

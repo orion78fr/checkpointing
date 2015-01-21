@@ -20,7 +20,6 @@ public class Message {
 		this.rollbackNbr = rollbackNbr;
 		this.sender = sender;
 	}
-
 	public Type getType() {
 		return type;
 	}
