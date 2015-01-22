@@ -54,7 +54,7 @@ public class App implements EDProtocol{
 				break;
 			}
 			int sender = mess.getSender();
-			System.out.printf("[%d %d] Message n°%d from %d received\n", CommonState.getTime(), this.nodeId, received[sender], sender);
+			System.out.printf("[%d %d] Message n°%d from %d received", CommonState.getTime(), this.nodeId, received[sender], sender);
 			received[sender]++;
 			if(Constants.isDomino()){
 				if(prevDominoId == sender){
@@ -63,10 +63,11 @@ public class App implements EDProtocol{
 							prevDominoId = this.nodeId;
 						}
 					}
-					System.out.printf(" (Forced checkpoint)", CommonState.getTime(), this.nodeId);
+					System.out.printf(" (+ Forced checkpoint)", CommonState.getTime(), this.nodeId);
 					doCheckPoint();
 				}
 			}
+			System.out.println();
 			break;
 		case CHECKPOINT:
 			System.out.printf("[%d %d] Checkpoint n°%d, State %d\n", CommonState.getTime(), this.nodeId, checkpoints.size()+1, this.state);
@@ -139,7 +140,7 @@ public class App implements EDProtocol{
 			
 			checkpoints.push(c); // The checkpoint is valid, so we can reuse it later
 			
-			System.out.printf("[%d %d] ROLLBACK - Rollback n°%d, forced by %d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, from, this.state, c.getState());
+			System.out.printf("[%d %d] ROLLBACK - Rollback n°%d, forced by node n°%d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, from, this.state, c.getState());
 			
 			rollbackTo(c);
 		}
