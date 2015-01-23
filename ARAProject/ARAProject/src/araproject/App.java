@@ -22,7 +22,9 @@ public class App implements EDProtocol{
 	private int[] received;
 	private Stack<Checkpoint> checkpoints;
 	private int rollbackNbr;
+	private boolean inRollback;
 	
+	// Used if forcing domino effect
 	private static volatile int prevDominoId;
 
 	public App(String prefix) {
@@ -49,8 +51,12 @@ public class App implements EDProtocol{
 		Message mess = (Message)event;
 		switch(mess.getType()){
 		case APPLICATIVE:
+			if(this.inRollback){
+				// Ignore messages during rollback
+				break;
+			}
 			if(mess.getRollbackNbr() != this.rollbackNbr) { 
-				// Message to ignore
+				// Ignore message coming from a previous rollback
 				break;
 			}
 			int sender = mess.getSender();
@@ -64,14 +70,13 @@ public class App implements EDProtocol{
 						}
 					}
 					System.out.printf(" (+ Forced checkpoint)", CommonState.getTime(), this.nodeId);
-					doCheckPoint();
+					doCheckPoint(this.rollbackNbr);
 				}
 			}
 			System.out.println();
 			break;
 		case CHECKPOINT:
-			System.out.printf("[%d %d] Checkpoint n°%d, State %d\n", CommonState.getTime(), this.nodeId, checkpoints.size()+1, this.state);
-			doCheckPoint();
+			doCheckPoint(mess.getRollbackNbr());
 			break;
 		case ROLLBACKSTART:
 			startRollback();
@@ -79,10 +84,17 @@ public class App implements EDProtocol{
 		case ROLLBACKSTEP:
 			doRollback(mess);
 			break;
+		case ROLLBACKEND:
+			if(this.inRollback && mess.getRollbackNbr() == this.rollbackNbr){
+				// No rollback in restart timeout
+				this.inRollback = false;
+				planNextStep();
+				planNextCheckpoint();
+				System.out.printf("[%d %d] Ended rollback n°%d, Restarting...\n", CommonState.getTime(), this.nodeId, this.rollbackNbr);
+			}
+			break;
 		case STEP:
-			System.out.printf("[%d %d] State change : %d -> %d", CommonState.getTime(), this.nodeId, this.state, this.state+1);
 			doStep(mess.getRollbackNbr());
-			System.out.println();
 			break;
 		}
 	}
@@ -106,10 +118,13 @@ public class App implements EDProtocol{
 	}
 	
 	private void rollbackTo(Checkpoint c) {
+		rollbackNbr++;
+		
 		state = c.getState();
 		sent = c.getSent();
 		received = c.getReceived();
 		
+		// Sending sent[i] to i
 		for(int i = 0; i < Network.size(); i++){
 			if(i != this.nodeId){
 				this.transport.send(getMyNode(), Network.get(i), new Message(Message.Type.ROLLBACKSTEP, sent[i], this.rollbackNbr, this.nodeId), this.mypid);
@@ -117,18 +132,26 @@ public class App implements EDProtocol{
 		}
 	}
 	
+	private void planRestart(){
+		// Planning execution restart
+		EDSimulator.add(Constants.getRestartDelay(), new Message(Message.Type.ROLLBACKEND, 0, rollbackNbr, this.nodeId), this.getMyNode(), this.mypid);
+	}
+	
 	private void startRollback(){
-		rollbackNbr++;
+		this.inRollback = true;
 		
 		Checkpoint c = this.checkpoints.pop();
 		
 		System.out.printf("[%d %d] ROLLBACK - Initiating rollback n°%d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, this.state, c.getState());
 		
 		rollbackTo(c);
+		
+		planRestart();
 	}
 	
 	private void doRollback(Message msg){
-		this.rollbackNbr = Math.max(this.rollbackNbr + 1, msg.getRollbackNbr());
+		this.rollbackNbr = Math.max(this.rollbackNbr, msg.getRollbackNbr());
+		this.inRollback = true;
 		
 		int from = msg.getSender();
 		if(received[from] > msg.getMsg()){
@@ -144,28 +167,51 @@ public class App implements EDProtocol{
 			
 			rollbackTo(c);
 		}
+		
+		planRestart();
 	}
 	
-	private void doCheckPoint(){
+	private void doCheckPoint(int messRollbackNbr){
+		if(!this.inRollback){
+			planNextCheckpoint();
+		}
+		
+		if(messRollbackNbr != this.rollbackNbr){
+			// Message to ignore, planned before previous rollback
+			return;
+		}
+		
+		System.out.printf("[%d %d] Checkpoint n°%d, State %d\n", CommonState.getTime(), this.nodeId, checkpoints.size()+1, this.state);
+		
+		this.checkpoints.push(new Checkpoint(state, sent, received));
+	}
+	
+	private void planNextCheckpoint(){
 		// Next checkpoint
 		if(!Constants.isDomino()){ // If domino, we force checkpoint on message reception
 			int delay = Constants.getCheckpointDelayMin() + CommonState.r.nextInt(Constants.getCheckpointDelayMax() - Constants.getCheckpointDelayMin() + 1);
 			EDSimulator.add(delay, new Message(Message.Type.CHECKPOINT, 0, rollbackNbr, this.nodeId), this.getMyNode(), this.mypid);
 		}
-		
-		this.checkpoints.push(new Checkpoint(state, sent, received));
 	}
 	
-	private void doStep(int num){
+	private void planNextStep(){
 		// Next step
 		int delay = Constants.getStepDelayMin() + CommonState.r.nextInt(Constants.getStepDelayMax() - Constants.getStepDelayMin() + 1);
 		EDSimulator.add(delay, new Message(Message.Type.STEP, 0, rollbackNbr, this.nodeId), this.getMyNode(), this.mypid);
+	}
+	
+	private void doStep(int messRollbackNbr){
+		if(!this.inRollback){
+			// Do not plan execution during a rollback
+			planNextStep();
+		}
 		
-		if(num != this.rollbackNbr) { 
-			// Message to ignore (planned by previous rollback, prevents stepping during rollbacks
-			System.out.print(" (ignored because planned before rollback)");
+		if(messRollbackNbr != this.rollbackNbr) { 
+			// Message to ignore, planned before previous rollback
 			return;
 		}
+		
+		System.out.printf("[%d %d] State change : %d -> %d", CommonState.getTime(), this.nodeId, this.state, this.state+1);
 		
 		state++;
 		
@@ -186,12 +232,7 @@ public class App implements EDProtocol{
 				}
 			}
 		}
+		
+		System.out.println();
 	}
-	/*
-	 if(Constants.isDomino()){
-			System.out.printf(" (Forced checkpoint)", CommonState.getTime(), this.nodeId);
-			doCheckPoint();
-		}
-	 */
-
 }

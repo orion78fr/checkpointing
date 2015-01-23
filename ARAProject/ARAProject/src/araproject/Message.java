@@ -6,7 +6,8 @@ public class Message {
 		CHECKPOINT, // Auto-message to save state
 		STEP, // Auto-message to increment state
 		ROLLBACKSTART, // Message to initiate rollback
-		ROLLBACKSTEP; // Message between nodes to have a consistent rollback
+		ROLLBACKSTEP, // Message between nodes to have a consistent rollback
+		ROLLBACKEND; // Message to restart execution
 	}
 	
 	private final Type type;

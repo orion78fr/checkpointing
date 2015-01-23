@@ -13,8 +13,8 @@ public class Constants {
 	private static int stepDelayMax;
 	private static int checkpointDelayMin;
 	private static int checkpointDelayMax;
+	private static int restartDelay;
 	private static String outputFile;
-	
 	private static boolean isDomino;
 	
 	public static void loadConstants(){
@@ -26,7 +26,8 @@ public class Constants {
 		checkpointDelayMin = Configuration.getInt("simulation.checkpointDelayMin");
 		checkpointDelayMax = Configuration.getInt("simulation.checkpointDelayMax");
 		
-		// TODO Domino effect forcing
+		restartDelay = Configuration.getInt("simulation.restartDelay");
+		
 		isDomino = Configuration.getBoolean("simulation.isDomino");
 		
 		outputFile = Configuration.getString("simulation.outputFile", null);
@@ -63,5 +64,8 @@ public class Constants {
 	public static String getOutputFile() {
 		return outputFile;
 	}
-	
+
+	public static int getRestartDelay() {
+		return restartDelay;
+	}
 }
