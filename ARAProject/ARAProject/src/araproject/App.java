@@ -4,6 +4,7 @@ import java.util.Stack;
 
 import peersim.config.Configuration;
 import peersim.core.CommonState;
+import peersim.core.Fallible;
 import peersim.core.Network;
 import peersim.core.Node;
 import peersim.edsim.EDProtocol;
@@ -26,6 +27,13 @@ public class App implements EDProtocol{
 	
 	// Used if forcing domino effect
 	private static volatile int prevDominoId;
+	
+	// Fault Detector
+	private boolean[] suspect;
+	private int[] lastHeartbeat;
+	private int restartCount;
+	private int heartbeatCount;
+	private boolean restarting;
 
 	public App(String prefix) {
 		this.prefix = prefix;
@@ -44,6 +52,16 @@ public class App implements EDProtocol{
 			this.received[i] = 0;
 		}
 		this.checkpoints = new Stack<Checkpoint>();
+		
+		this.suspect = new boolean[size];
+		this.lastHeartbeat = new int[size];
+		for(int i = 0; i<size; i++){
+			this.suspect[i] = false;
+			this.lastHeartbeat[i] = 0;
+		}
+		this.restartCount = 0;
+		this.heartbeatCount = 0;
+		this.restarting = false;
 	}
 
 	@Override
@@ -96,9 +114,33 @@ public class App implements EDProtocol{
 		case STEP:
 			doStep(mess.getRollbackNbr());
 			break;
+		case STEPHEARTBEAT:
+			doStepHeartbeat();
+			break;
+		case HEARTBEAT:
+			receiveHeartbeat(mess.getSender(), mess.getMsg());
+			break;
+		case CHECKHEARTBEAT:
+				doCheckHeartbeat(mess.getMsg(), mess.getRollbackNbr());
+			break;
+		case KILL:
+			System.out.printf("[%d %d] kill received from %d\n", CommonState.getTime(), this.nodeId, mess.getSender());
+			this.restarting = true;
+			Network.get(this.nodeId).setFailState(Fallible.DOWN);
+			break;
+		case RESTART:
+			if(!this.inRollback){
+				if(++this.restartCount >= 3){
+					System.out.printf("[%d %d] 3 restart received\n", CommonState.getTime(), this.nodeId);
+					startRollback();
+					this.restarting = false;
+					doStepHeartbeat();
+				}
+			}
+			break;
 		}
 	}
-	
+
 	public void setTransportLayer(int nodeId) {
 		this.nodeId = nodeId;
 		this.transport = (MatrixTransport) Network.get(this.nodeId).getProtocol(this.transportPid);
@@ -225,7 +267,7 @@ public class App implements EDProtocol{
 			send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(dest));
 		} else if(r >= 1 - Constants.getProbaBroadcast()){
 			// Bcast
-			System.out.print(" and Broadcasting message");
+			System.out.printf(" and Broadcasting message");
 			for(int i = 0; i < Network.size(); i++){
 				if(i != this.nodeId){
 					send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(i));
@@ -234,5 +276,45 @@ public class App implements EDProtocol{
 		}
 		
 		System.out.println();
+	}
+	
+	public void doStepHeartbeat(){
+		// plan next send
+		EDSimulator.add(Constants.getHeartbeatDelay(), new Message(Message.Type.STEPHEARTBEAT, 0, rollbackNbr, this.nodeId), this.getMyNode(), this.mypid);
+		this.heartbeatCount++;
+		System.out.printf("[%d %d] Broadcasting heartbeats %d\n", CommonState.getTime(), this.nodeId, this.heartbeatCount);
+		for(int i = 0; i < Network.size(); i++){
+			if(i != this.nodeId){
+				send(new Message(Message.Type.HEARTBEAT, this.heartbeatCount, rollbackNbr, this.nodeId), Network.get(i));
+			}
+		}
+	}
+	
+	
+	private void receiveHeartbeat(int sender, int number) {
+		//System.out.printf("[%d %d] Heartbeat from %d received\n", CommonState.getTime(), this.nodeId, sender);
+
+		if(this.lastHeartbeat[sender] < number){
+			if(this.suspect[sender]){
+				this.suspect[sender] = false;
+				System.out.printf("[%d %d] node %d not suspect anymore\n",CommonState.getTime(), this.nodeId, sender);
+			}
+			this.lastHeartbeat[sender] = number;
+		}
+		
+		EDSimulator.add(Constants.getHeartbeatDelay()+Constants.getHeartbeatMargin(), new Message(Message.Type.CHECKHEARTBEAT, sender, this.lastHeartbeat[sender], this.nodeId), this.getMyNode(), this.mypid);
+	}
+	
+	private void doCheckHeartbeat(int nodeId, int number){
+		if(this.inRollback || (Network.get(this.nodeId).getFailState()==Fallible.DOWN) || this.restarting){
+			return;
+		}else{
+			if(this.lastHeartbeat[nodeId] <= number){
+				this.suspect[nodeId] = true;
+				System.out.printf("[%d %d] node %d suspect !!!\n",CommonState.getTime(), this.nodeId, nodeId);
+				Network.get(nodeId).setFailState(Fallible.OK);
+				send(new Message(Message.Type.RESTART, 0, rollbackNbr, this.nodeId), Network.get(nodeId));
+			}
+		}
 	}
 }

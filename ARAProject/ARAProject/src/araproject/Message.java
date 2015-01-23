@@ -7,7 +7,12 @@ public class Message {
 		STEP, // Auto-message to increment state
 		ROLLBACKSTART, // Message to initiate rollback
 		ROLLBACKSTEP, // Message between nodes to have a consistent rollback
-		ROLLBACKEND; // Message to restart execution
+		ROLLBACKEND, // Message to restart execution
+		STEPHEARTBEAT, // Message to launch heartbeat broadcast
+		HEARTBEAT, // Message for fault detection
+		CHECKHEARTBEAT, // Auto-message to check other nodes
+		KILL, // Message to simulate fault
+		RESTART; // Message to simulate restart after fault detection
 	}
 	
 	private final Type type;

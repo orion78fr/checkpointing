@@ -16,6 +16,8 @@ public class Constants {
 	private static int restartDelay;
 	private static String outputFile;
 	private static boolean isDomino;
+	private static int heartbeatDelay;
+	private static int heartbeatMargin;
 	
 	public static void loadConstants(){
 		probaUnicast = Configuration.getDouble("simulation.probaUnicast");
@@ -31,6 +33,9 @@ public class Constants {
 		isDomino = Configuration.getBoolean("simulation.isDomino");
 		
 		outputFile = Configuration.getString("simulation.outputFile", null);
+		
+		heartbeatDelay = Configuration.getInt("simulation.heartbeatDelay");
+		heartbeatMargin = Configuration.getInt("simulation.heartbeatMargin");
 	}
 
 	public static double getProbaUnicast() {
@@ -67,5 +72,13 @@ public class Constants {
 
 	public static int getRestartDelay() {
 		return restartDelay;
+	}
+	
+	public static int getHeartbeatDelay() {
+		return heartbeatDelay;
+	}
+	
+	public static int getHeartbeatMargin(){
+		return heartbeatMargin;
 	}
 }

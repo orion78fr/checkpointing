@@ -43,11 +43,12 @@ public class Initializer implements Control {
 		    nodeApp.setTransportLayer(i);
 		    
 		    EDSimulator.add(0, new Message(Message.Type.CHECKPOINT, 0, 0, -1), n, appPid);
+		    EDSimulator.add(Constants.getHeartbeatDelay(), new Message(Message.Type.STEPHEARTBEAT, 0, 0, -1), n, appPid);
 		    int delay = Constants.getStepDelayMin() + CommonState.r.nextInt(Constants.getStepDelayMax() - Constants.getStepDelayMin() + 1);
 		    EDSimulator.add(delay, new Message(Message.Type.STEP, 0, 0, -1), n, appPid);
 		}
 		
-		EDSimulator.add(2000, new Message(Message.Type.ROLLBACKSTART, 0, 0, -1), Network.get(4), appPid);
+		//EDSimulator.add(2000, new Message(Message.Type.ROLLBACKSTART, 0, 0, -1), Network.get(4), appPid);
 		
 		return false;
 	}
