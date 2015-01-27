@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.swing.JFrame;
 
 import peersim.core.CommonState;
+import peersim.edsim.EDSimulator;
 
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.util.mxConstants;

@@ -12,7 +12,7 @@ import peersim.edsim.EDSimulator;
 
 public class App implements EDProtocol{
 	private int transportPid;
-    private MatrixTransport transport;
+    private static MatrixTransport transport;
 	private int mypid;
 	private int nodeId;
 	private String prefix;
@@ -41,7 +41,7 @@ public class App implements EDProtocol{
 		this.prefix = prefix;
 		this.transportPid = Configuration.getPid(prefix + ".transport");
 		this.mypid = Configuration.getPid(prefix + ".myself");
-		this.transport = null;
+		transport = null;
 		
 		this.state = 0;
 		this.rollbackNbr = 0;
@@ -146,7 +146,7 @@ public class App implements EDProtocol{
 
 	public void setTransportLayer(int nodeId) {
 		this.nodeId = nodeId;
-		this.transport = (MatrixTransport) Network.get(this.nodeId).getProtocol(this.transportPid);
+		transport = (MatrixTransport) Network.get(this.nodeId).getProtocol(this.transportPid);
 	}
 	
 	public Object clone() {
@@ -155,11 +155,11 @@ public class App implements EDProtocol{
 	
 	private void send(Message msg, Node dest) {
 		sent[(int) dest.getID()]++;
-		this.transport.send(getMyNode(), dest, msg, this.mypid);
+		transport.send(getMyNode(), dest, msg, this.mypid);
 	}
 	
 	private void sendHeartbeat(Message msg, Node dest) {
-		this.transport.send(getMyNode(), dest, msg, this.mypid);
+		transport.send(getMyNode(), dest, msg, this.mypid);
 	}
 	
 	private Node getMyNode() {
@@ -176,7 +176,7 @@ public class App implements EDProtocol{
 		// Sending sent[i] to i
 		for(int i = 0; i < Network.size(); i++){
 			if(i != this.nodeId){
-				this.transport.send(getMyNode(), Network.get(i), new Message(Message.Type.ROLLBACKSTEP, sent[i], this.rollbackNbr, this.nodeId), this.mypid);
+				transport.send(getMyNode(), Network.get(i), new Message(Message.Type.ROLLBACKSTEP, sent[i], this.rollbackNbr, this.nodeId), this.mypid);
 			}
 		}
 	}

@@ -16,11 +16,7 @@ public class MatrixTransport implements Protocol {
 		for(int i = 0; i < size; i++){
 			matrix[i] = new long[size];
 			for(int j = 0; j < size; j++){
-				if(i != j){
-					matrix[i][j] = 1;
-				} else {
-					matrix[i][j] = 0;
-				}
+				matrix[i][j] = Math.abs(i-j);
 			}
 		}
 	}
