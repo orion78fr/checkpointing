@@ -33,6 +33,8 @@ public class App implements EDProtocol{
 	private int[] lastHeartbeat;
 	private int restartCount;
 	private int heartbeatCount;
+	
+	// true if killed and restarting
 	private boolean restarting;
 
 	public App(String prefix) {
