@@ -71,6 +71,8 @@ public class App implements EDProtocol{
 		Message mess = (Message)event;
 		switch(mess.getType()){
 		case APPLICATIVE:
+			int sender = mess.getSender();
+			Visualizer.receive(sender, this.nodeId);
 			if(this.inRollback){
 				// Ignore messages during rollback
 				break;
@@ -79,9 +81,7 @@ public class App implements EDProtocol{
 				// Ignore message coming from a previous rollback
 				break;
 			}
-			int sender = mess.getSender();
 			System.out.printf("[%d %d] Message n°%d from %d received", CommonState.getTime(), this.nodeId, received[sender], sender);
-			Visualizer.receive(sender, this.nodeId);
 			received[sender]++;
 			if(Constants.isDomino()){
 				if(prevDominoId == sender){

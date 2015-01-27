@@ -16,10 +16,10 @@ public class Controler implements peersim.core.Control {
 
     public boolean execute() {
     	
-    	if(!killed){
+    	/*if(!killed){
     		killed = true;
     		EDSimulator.add(2800, new Message(Message.Type.KILL, 0, 0, -1), Network.get(6), controlerPid);
-    	}
+    	}*/
     	
     	if(!rollbacked){
     		rollbacked = true;

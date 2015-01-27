@@ -17,7 +17,7 @@ public class Visualizer extends JFrame{
 	private static final long serialVersionUID = 2107967669924972959L;
 	
 	private static int hOffset = 10;
-	private static int hStep = 50;
+	private static int hStep = 30;
 	private static int vOffset = 50;
 	private static int vStep = 50;
 	private static int hSize = 20;
