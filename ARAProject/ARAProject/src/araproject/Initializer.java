@@ -32,6 +32,7 @@ public class Initializer implements Control {
 		}
 			
 		int appPid = Configuration.getPid(prefix + ".appProtocolPid");
+		Visualizer.setSize(Network.size());
 		int nodeNb = Network.size();
 		
 		/* Linking applicative and transport layers */

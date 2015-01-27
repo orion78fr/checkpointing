@@ -79,6 +79,7 @@ public class App implements EDProtocol{
 			}
 			int sender = mess.getSender();
 			System.out.printf("[%d %d] Message n°%d from %d received", CommonState.getTime(), this.nodeId, received[sender], sender);
+			Visualizer.receive(sender, this.nodeId);
 			received[sender]++;
 			if(Constants.isDomino()){
 				if(prevDominoId == sender){
@@ -186,6 +187,7 @@ public class App implements EDProtocol{
 		
 		System.out.printf("[%d %d] ROLLBACK - Initiating rollback n°%d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, this.state, c.getState());
 		
+		Visualizer.rollbackstart(this.nodeId);
 		rollbackTo(c);
 		
 		planRestart();
@@ -205,6 +207,7 @@ public class App implements EDProtocol{
 			
 			checkpoints.push(c); // The checkpoint is valid, so we can reuse it later
 			
+			Visualizer.rollback(this.nodeId, checkpoints.size());
 			System.out.printf("[%d %d] ROLLBACK - Rollback n°%d, forced by node n°%d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, from, this.state, c.getState());
 			
 			rollbackTo(c);
@@ -224,6 +227,7 @@ public class App implements EDProtocol{
 		}
 		
 		System.out.printf("[%d %d] Checkpoint n°%d, State %d\n", CommonState.getTime(), this.nodeId, checkpoints.size()+1, this.state);
+		Visualizer.checkpoint(this.nodeId, checkpoints.size()+1);
 		
 		this.checkpoints.push(new Checkpoint(state, sent, received));
 	}
@@ -254,6 +258,7 @@ public class App implements EDProtocol{
 		}
 		
 		System.out.printf("[%d %d] State change : %d -> %d", CommonState.getTime(), this.nodeId, this.state, this.state+1);
+		Visualizer.step(this.nodeId, this.state+1);
 		
 		state++;
 		
@@ -264,6 +269,7 @@ public class App implements EDProtocol{
 			int dest;
 			while((dest = CommonState.r.nextInt(Network.size())) == this.nodeId); // Get an id different from self
 			System.out.printf(" and Sending message n°%d to %d", sent[dest], dest);
+			Visualizer.send(this.nodeId, dest);
 			send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(dest));
 		} else if(r >= 1 - Constants.getProbaBroadcast()){
 			// Bcast
@@ -271,6 +277,7 @@ public class App implements EDProtocol{
 			for(int i = 0; i < Network.size(); i++){
 				if(i != this.nodeId){
 					send(new Message(Message.Type.APPLICATIVE, 0, rollbackNbr, this.nodeId), Network.get(i));
+					Visualizer.send(this.nodeId, i);
 				}
 			}
 		}
