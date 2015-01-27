@@ -18,7 +18,7 @@ public class Controler implements peersim.core.Control {
     	
     	if(!killed){
     		killed = true;
-    		EDSimulator.add(500, new Message(Message.Type.KILL, 0, 0, -1), Network.get(6), controlerPid);
+    		EDSimulator.add(2800, new Message(Message.Type.KILL, 0, 0, -1), Network.get(6), controlerPid);
     	}
     	
     	if(!rollbacked){

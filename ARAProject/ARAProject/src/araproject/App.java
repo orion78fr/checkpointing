@@ -157,6 +157,10 @@ public class App implements EDProtocol{
 		this.transport.send(getMyNode(), dest, msg, this.mypid);
 	}
 	
+	private void sendHeartbeat(Message msg, Node dest) {
+		this.transport.send(getMyNode(), dest, msg, this.mypid);
+	}
+	
 	private Node getMyNode() {
 		return Network.get(this.nodeId);
 	}
@@ -287,7 +291,7 @@ public class App implements EDProtocol{
 		System.out.printf("[%d %d] Broadcasting heartbeats %d\n", CommonState.getTime(), this.nodeId, this.heartbeatCount);
 		for(int i = 0; i < Network.size(); i++){
 			if(i != this.nodeId){
-				send(new Message(Message.Type.HEARTBEAT, this.heartbeatCount, rollbackNbr, this.nodeId), Network.get(i));
+				sendHeartbeat(new Message(Message.Type.HEARTBEAT, this.heartbeatCount, rollbackNbr, this.nodeId), Network.get(i));
 			}
 		}
 	}
@@ -315,7 +319,7 @@ public class App implements EDProtocol{
 				this.suspect[nodeId] = true;
 				System.out.printf("[%d %d] node %d suspect !!!\n",CommonState.getTime(), this.nodeId, nodeId);
 				Network.get(nodeId).setFailState(Fallible.OK);
-				send(new Message(Message.Type.RESTART, 0, rollbackNbr, this.nodeId), Network.get(nodeId));
+				sendHeartbeat(new Message(Message.Type.RESTART, 0, rollbackNbr, this.nodeId), Network.get(nodeId));
 			}
 		}
 	}
