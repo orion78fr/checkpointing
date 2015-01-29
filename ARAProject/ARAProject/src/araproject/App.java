@@ -129,6 +129,7 @@ public class App implements EDProtocol{
 		case KILL:
 			System.out.printf("[%d %d] kill received from %d\n", CommonState.getTime(), this.nodeId, mess.getSender());
 			this.restarting = true;
+			Visualizer.kill(this.nodeId);
 			Network.get(this.nodeId).setFailState(Fallible.DOWN);
 			break;
 		case RESTART:
@@ -323,7 +324,7 @@ public class App implements EDProtocol{
 	}
 	
 	private void doCheckHeartbeat(int nodeId, int number){
-		if(this.inRollback || (Network.get(this.nodeId).getFailState()==Fallible.DOWN) || this.restarting){
+		if(/*this.inRollback || */(Network.get(this.nodeId).getFailState()==Fallible.DOWN) || this.restarting){
 			return;
 		}else{
 			if(this.lastHeartbeat[nodeId] <= number){

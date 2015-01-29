@@ -12,6 +12,7 @@ import peersim.core.CommonState;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.view.mxGraph;
+import com.sun.xml.internal.bind.v2.Messages;
 
 public class Visualizer extends JFrame {
 	private static final long serialVersionUID = 2107967669924972959L;
@@ -128,6 +129,9 @@ public class Visualizer extends JFrame {
 		pendingMsg.get(from).clear();
 		nodes.add(new Event(CommonState.getTime(), from, 0, Message.Type.ROLLBACKSTART));
 	}
+	public static void kill(int from){
+		nodes.add(new Event(CommonState.getTime(), from, 0, Message.Type.KILL));
+	}
 
 	private static int size;
 
@@ -157,6 +161,16 @@ public class Visualizer extends JFrame {
 					nodeStyle = mxConstants.STYLE_FILLCOLOR + "=#ff8800";
 				} else if (e.getType() == Message.Type.ROLLBACKSTART) {
 					nodeStyle = mxConstants.STYLE_FILLCOLOR + "=#ff0000";
+				} else if (e.getType() == Message.Type.KILL){
+					// Draw a cross at crash point
+					nodeStyle = mxConstants.STYLE_FILLCOLOR + "=#ff0000;" + mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE;
+					Object a = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep - 5, vOffset + e.getNode() * vStep - 5, 0, 0);
+					Object b = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep + hSize + 5, vOffset  + e.getNode() * vStep + vSize + 5, 0, 0);
+					graph.insertEdge(parent, null, null, a, b, nodeStyle);
+					a = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep + hSize + 5, vOffset + e.getNode() * vStep - 5, 0, 0);
+					b = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep - 5, vOffset + e.getNode() * vStep + vSize + 5, 0, 0);
+					graph.insertEdge(parent, null, null, a, b, nodeStyle);
+					continue;
 				}
 
 				Object o = graph.insertVertex(parent, null, e.getNum(), hOffset + e.getT() * hStep, vOffset + e.getNode() * vStep, hSize, vSize, nodeStyle);
