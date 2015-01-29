@@ -26,7 +26,8 @@ public class Controler implements peersim.core.Control {
     	
     	if(CommonState.getTime() == 0){
     		EDSimulator.add(2000, new Message(Message.Type.KILL, 0, 0, -1), Network.get(4), this.controlerPid);
-    		EDSimulator.add(2035, new Message(Message.Type.KILL, 0, 0, -1), Network.get(6), this.controlerPid);
+    		EDSimulator.add(2030, new Message(Message.Type.KILL, 0, 0, -1), Network.get(6), this.controlerPid);
+    		EDSimulator.add(2040, new Message(Message.Type.KILL, 0, 0, -1), Network.get(6), this.controlerPid);
     	}
     	
 		return false;
