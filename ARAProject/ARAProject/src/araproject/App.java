@@ -124,7 +124,7 @@ public class App implements EDProtocol{
 			receiveHeartbeat(mess.getSender(), mess.getMsg());
 			break;
 		case CHECKHEARTBEAT:
-				doCheckHeartbeat(mess.getMsg(), mess.getRollbackNbr());
+			doCheckHeartbeat(mess.getMsg(), mess.getRollbackNbr());
 			break;
 		case KILL:
 			System.out.printf("[%d %d] kill received from %d\n", CommonState.getTime(), this.nodeId, mess.getSender());
@@ -133,11 +133,13 @@ public class App implements EDProtocol{
 			break;
 		case RESTART:
 			if(!this.inRollback){
-				if(++this.restartCount >= 3){
-					System.out.printf("[%d %d] 3 restart received\n", CommonState.getTime(), this.nodeId);
-					startRollback();
-					this.restarting = false;
-					doStepHeartbeat();
+				if(mess.getRollbackNbr() == this.rollbackNbr){
+					if(++this.restartCount >= 3){
+						System.out.printf("[%d %d] 3 restart received\n", CommonState.getTime(), this.nodeId);
+						startRollback();
+						this.restarting = false;
+						doStepHeartbeat();
+					}
 				}
 			}
 			break;
@@ -190,6 +192,9 @@ public class App implements EDProtocol{
 		this.inRollback = true;
 		
 		Checkpoint c = this.checkpoints.pop();
+		if(this.checkpoints.size() == 0){
+			this.checkpoints.add(c);
+		}
 		
 		System.out.printf("[%d %d] ROLLBACK - Initiating rollback n°%d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, this.state, c.getState());
 		
@@ -223,13 +228,13 @@ public class App implements EDProtocol{
 	}
 	
 	private void doCheckPoint(int messRollbackNbr){
-		if(!this.inRollback){
-			planNextCheckpoint();
-		}
-		
 		if(messRollbackNbr != this.rollbackNbr){
 			// Message to ignore, planned before previous rollback
 			return;
+		}
+		
+		if(!this.inRollback){
+			planNextCheckpoint();
 		}
 		
 		System.out.printf("[%d %d] Checkpoint n°%d, State %d\n", CommonState.getTime(), this.nodeId, checkpoints.size()+1, this.state);
@@ -253,14 +258,13 @@ public class App implements EDProtocol{
 	}
 	
 	private void doStep(int messRollbackNbr){
-		if(!this.inRollback){
-			// Do not plan execution during a rollback
-			planNextStep();
-		}
-		
 		if(messRollbackNbr != this.rollbackNbr) { 
 			// Message to ignore, planned before previous rollback
 			return;
+		}
+		if(!this.inRollback){
+			// Do not plan execution during a rollback
+			planNextStep();
 		}
 		
 		System.out.printf("[%d %d] State change : %d -> %d", CommonState.getTime(), this.nodeId, this.state, this.state+1);

@@ -128,11 +128,11 @@ public class Visualizer extends JFrame{
 		Object parent = graph.getDefaultParent();
 		
 		graph.getModel().beginUpdate();
-		
+
 	    try {
 	    	Object[] olds = new Object[size];
 	    	Object prev = null;
-	    	for(int i = 0; i < 3600; i+=10){
+	    	for(int i = 0; i <= 3600; i+=10){
 	    		Object o = graph.insertVertex(parent, null, i, hOffset + i * hStep, 10, hSize, vSize, mxConstants.STYLE_SHAPE + "=" + mxConstants.SHAPE_HEXAGON + ";" + mxConstants.STYLE_FILLCOLOR + "=#cccccc");
 		    	  graph.insertEdge(parent, null, "", prev, o,
 		    			  mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE);
@@ -155,6 +155,11 @@ public class Visualizer extends JFrame{
 		    			  mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE);
 		    	  
 		    	  olds[e.getNode()] = o;
+		      }
+		      for(int i = 0; i < size; i++){
+		    	  Object a = graph.insertVertex(parent, null, "", hOffset + hSize + 3600 * hStep, vOffset + vSize/2 + i * vStep, 0, 0);
+		    			  graph.insertEdge(parent, null, null, olds[i], a,
+				    			  mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE);
 		      }
 		      
 		      for(Msg m : messages){
