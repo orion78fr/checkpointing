@@ -163,7 +163,7 @@ public class Visualizer extends JFrame {
 					nodeStyle = mxConstants.STYLE_FILLCOLOR + "=#ff0000";
 				} else if (e.getType() == Message.Type.KILL){
 					// Draw a cross at crash point
-					nodeStyle = mxConstants.STYLE_FILLCOLOR + "=#ff0000;" + mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE;
+					nodeStyle = mxConstants.STYLE_STROKECOLOR + "=#ff0000;" + mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE;
 					Object a = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep - 5, vOffset + e.getNode() * vStep - 5, 0, 0);
 					Object b = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep + hSize + 5, vOffset  + e.getNode() * vStep + vSize + 5, 0, 0);
 					graph.insertEdge(parent, null, null, a, b, nodeStyle);
