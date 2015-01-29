@@ -129,12 +129,16 @@ public class App implements EDProtocol{
 		case KILL:
 			System.out.printf("[%d %d] kill received from %d\n", CommonState.getTime(), this.nodeId, mess.getSender());
 			this.restarting = true;
+			this.inRollback = false;
 			Visualizer.kill(this.nodeId);
 			Network.get(this.nodeId).setFailState(Fallible.DOWN);
 			break;
 		case RESTART:
+			System.out.printf("[%d %d] restart received, before condition\n", CommonState.getTime(), this.nodeId);
 			if(!this.inRollback){
-				if(mess.getRollbackNbr() == this.rollbackNbr){
+				System.out.printf("[%d %d] restart received, after 1st cond, before 2nd\n", CommonState.getTime(), this.nodeId);
+				if(mess.getRollbackNbr() == this.heartbeatCount){
+					System.out.printf("[%d %d] restart received, after 2nd cond, before 3rd\n", CommonState.getTime(), this.nodeId);
 					if(++this.restartCount >= 3){
 						System.out.printf("[%d %d] 3 restart received\n", CommonState.getTime(), this.nodeId);
 						startRollback();
@@ -331,7 +335,7 @@ public class App implements EDProtocol{
 				this.suspect[nodeId] = true;
 				System.out.printf("[%d %d] node %d suspect !!!\n",CommonState.getTime(), this.nodeId, nodeId);
 				Network.get(nodeId).setFailState(Fallible.OK);
-				sendHeartbeat(new Message(Message.Type.RESTART, 0, rollbackNbr, this.nodeId), Network.get(nodeId));
+				sendHeartbeat(new Message(Message.Type.RESTART, 0, this.lastHeartbeat[nodeId], this.nodeId), Network.get(nodeId));
 			}
 		}
 	}
