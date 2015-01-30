@@ -118,7 +118,10 @@ public class App implements EDProtocol{
 			doStep(mess.getRollbackNbr());
 			break;
 		case STEPHEARTBEAT:
-			doStepHeartbeat();
+			if(!((Network.get(this.nodeId).getFailState()==Fallible.DOWN) || this.restarting)){
+				doStepHeartbeat();
+			}
+			
 			break;
 		case HEARTBEAT:
 			receiveHeartbeat(mess.getSender(), mess.getMsg());
@@ -134,15 +137,16 @@ public class App implements EDProtocol{
 			Network.get(this.nodeId).setFailState(Fallible.DOWN);
 			break;
 		case RESTART:
-			System.out.printf("[%d %d] restart received, before condition\n", CommonState.getTime(), this.nodeId);
+			//System.out.printf("[%d %d] restart received, step 1, num received: %d, last heartbeat: %d\n", CommonState.getTime(), this.nodeId, mess.getRollbackNbr(), this.heartbeatCount);
 			if(!this.inRollback){
-				System.out.printf("[%d %d] restart received, after 1st cond, before 2nd\n", CommonState.getTime(), this.nodeId);
+				//System.out.printf("[%d %d] restart received, step 2\n", CommonState.getTime(), this.nodeId);
 				if(mess.getRollbackNbr() == this.heartbeatCount){
-					System.out.printf("[%d %d] restart received, after 2nd cond, before 3rd\n", CommonState.getTime(), this.nodeId);
+					//System.out.printf("[%d %d] restart received, step 3\n", CommonState.getTime(), this.nodeId);
 					if(++this.restartCount >= 3){
-						System.out.printf("[%d %d] 3 restart received\n", CommonState.getTime(), this.nodeId);
+						System.out.printf("[%d %d] 3 RESTART received, starting rollback ...\n", CommonState.getTime(), this.nodeId);
 						startRollback();
 						this.restarting = false;
+						restartCount = 0;
 						doStepHeartbeat();
 					}
 				}
@@ -212,7 +216,6 @@ public class App implements EDProtocol{
 	private void doRollback(Message msg){
 		this.rollbackNbr = Math.max(this.rollbackNbr, msg.getRollbackNbr());
 		this.inRollback = true;
-		
 		int from = msg.getSender();
 		if(received[from] > msg.getMsg()){
 			// Rollback needed
@@ -314,29 +317,36 @@ public class App implements EDProtocol{
 	
 	
 	private void receiveHeartbeat(int sender, int number) {
-		//System.out.printf("[%d %d] Heartbeat from %d received\n", CommonState.getTime(), this.nodeId, sender);
-
-		if(this.lastHeartbeat[sender] < number){
-			if(this.suspect[sender]){
-				this.suspect[sender] = false;
-				System.out.printf("[%d %d] node %d not suspect anymore\n",CommonState.getTime(), this.nodeId, sender);
+		if(/*this.inRollback || */(Network.get(this.nodeId).getFailState()==Fallible.DOWN) || this.restarting){
+			return;
+		}else{
+			System.out.printf("[%d %d] Heartbeat %d from %d received", CommonState.getTime(), this.nodeId, number, sender);
+	
+			if(this.lastHeartbeat[sender] < number){
+				if(this.suspect[sender]){
+					this.suspect[sender] = false;
+					System.out.printf(", node %d not suspect anymore",sender);
+				}
+				System.out.printf("\n");
+				this.lastHeartbeat[sender] = number;
 			}
-			this.lastHeartbeat[sender] = number;
+			
+			EDSimulator.add(Constants.getHeartbeatDelay()+Constants.getHeartbeatMargin(), new Message(Message.Type.CHECKHEARTBEAT, sender, this.lastHeartbeat[sender], this.nodeId), this.getMyNode(), this.mypid);
 		}
-		
-		EDSimulator.add(Constants.getHeartbeatDelay()+Constants.getHeartbeatMargin(), new Message(Message.Type.CHECKHEARTBEAT, sender, this.lastHeartbeat[sender], this.nodeId), this.getMyNode(), this.mypid);
 	}
 	
 	private void doCheckHeartbeat(int nodeId, int number){
 		if(/*this.inRollback || */(Network.get(this.nodeId).getFailState()==Fallible.DOWN) || this.restarting){
 			return;
 		}else{
+			System.out.printf("[%d %d] CheckHeartbeat from node %d",CommonState.getTime(), this.nodeId, nodeId);
 			if(this.lastHeartbeat[nodeId] <= number){
 				this.suspect[nodeId] = true;
-				System.out.printf("[%d %d] node %d suspect !!!\n",CommonState.getTime(), this.nodeId, nodeId);
+				System.out.printf(", suspect !!!",CommonState.getTime(), this.nodeId, nodeId);
 				Network.get(nodeId).setFailState(Fallible.OK);
 				sendHeartbeat(new Message(Message.Type.RESTART, 0, this.lastHeartbeat[nodeId], this.nodeId), Network.get(nodeId));
 			}
+			System.out.printf("\n");
 		}
 	}
 }
