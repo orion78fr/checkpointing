@@ -19,6 +19,7 @@ public class Constants {
 	private static int heartbeatDelay;
 	private static int heartbeatMargin;
 	private static int firstHeartbeat;
+	private static int test;
 	
 	public static void loadConstants(){
 		probaUnicast = Configuration.getDouble("simulation.probaUnicast");
@@ -38,6 +39,8 @@ public class Constants {
 		heartbeatDelay = Configuration.getInt("simulation.heartbeatDelay");
 		heartbeatMargin = Configuration.getInt("simulation.heartbeatMargin");
 		firstHeartbeat = Configuration.getInt("simulation.firstHeartbeat");
+		
+		test = Configuration.getInt("simulation.test");
 	}
 
 	public static double getProbaUnicast() {
@@ -86,5 +89,9 @@ public class Constants {
 	
 	public static int getFirstHeartbeat(){
 		return firstHeartbeat;
+	}
+	
+	public static int getTest(){
+		return test;
 	}
 }
