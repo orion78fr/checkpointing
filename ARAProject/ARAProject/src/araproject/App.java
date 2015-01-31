@@ -72,9 +72,11 @@ public class App implements EDProtocol{
 		switch(mess.getType()){
 		case APPLICATIVE:
 			int sender = mess.getSender();
+			
 			Visualizer.receive(sender, this.nodeId);
-			if(this.inRollback){
-				// Ignore messages during rollback
+			
+			if(this.inRollback || this.restarting){
+				// Ignore messages during rollback or down state
 				break;
 			}
 			if(mess.getRollbackNbr() != this.rollbackNbr) { 
@@ -97,6 +99,10 @@ public class App implements EDProtocol{
 			System.out.println();
 			break;
 		case CHECKPOINT:
+			if(this.restarting){
+				// No checkpoint during down time
+				break;
+			}
 			doCheckPoint(mess.getRollbackNbr());
 			break;
 		case ROLLBACKSTART:
@@ -115,13 +121,17 @@ public class App implements EDProtocol{
 			}
 			break;
 		case STEP:
+			if(this.restarting){
+				// No step during down time
+				break;
+			}
 			doStep(mess.getRollbackNbr());
 			break;
 		case STEPHEARTBEAT:
-			if(!((Network.get(this.nodeId).getFailState()==Fallible.DOWN) || this.restarting)){
-				doStepHeartbeat();
+			if(this.restarting){
+				break;
 			}
-			
+			doStepHeartbeat();
 			break;
 		case HEARTBEAT:
 			receiveHeartbeat(mess.getSender(), mess.getMsg());
@@ -135,10 +145,13 @@ public class App implements EDProtocol{
 			this.inRollback = false;
 			Visualizer.kill(this.nodeId);
 			Network.get(this.nodeId).setFailState(Fallible.DOWN);
+			if((Network.get(this.nodeId).getFailState()==Fallible.DOWN)){
+				System.out.printf("I am down...\n");
+			}
 			break;
 		case RESTART:
 			//System.out.printf("[%d %d] restart received, step 1, num received: %d, last heartbeat: %d\n", CommonState.getTime(), this.nodeId, mess.getRollbackNbr(), this.heartbeatCount);
-			if(!this.inRollback){
+			//if(!this.inRollback){
 				//System.out.printf("[%d %d] restart received, step 2\n", CommonState.getTime(), this.nodeId);
 				if(mess.getRollbackNbr() == this.heartbeatCount){
 					//System.out.printf("[%d %d] restart received, step 3\n", CommonState.getTime(), this.nodeId);
@@ -150,7 +163,7 @@ public class App implements EDProtocol{
 						doStepHeartbeat();
 					}
 				}
-			}
+			//}
 			break;
 		}
 	}
@@ -274,7 +287,7 @@ public class App implements EDProtocol{
 			// Do not plan execution during a rollback
 			planNextStep();
 		}
-		
+
 		System.out.printf("[%d %d] State change : %d -> %d", CommonState.getTime(), this.nodeId, this.state, this.state+1);
 		Visualizer.step(this.nodeId, this.state+1);
 		
@@ -317,7 +330,7 @@ public class App implements EDProtocol{
 	
 	
 	private void receiveHeartbeat(int sender, int number) {
-		if(/*this.inRollback || */(Network.get(this.nodeId).getFailState()==Fallible.DOWN) || this.restarting){
+		if(/*this.inRollback || *//*(Network.get(this.nodeId).getFailState()==Fallible.DOWN) || */this.restarting){
 			return;
 		}else{
 			System.out.printf("[%d %d] Heartbeat %d from %d received", CommonState.getTime(), this.nodeId, number, sender);
@@ -336,7 +349,7 @@ public class App implements EDProtocol{
 	}
 	
 	private void doCheckHeartbeat(int nodeId, int number){
-		if(/*this.inRollback || */(Network.get(this.nodeId).getFailState()==Fallible.DOWN) || this.restarting){
+		if(/*this.inRollback || *//*(Network.get(this.nodeId).getFailState()==Fallible.DOWN) || */this.restarting){
 			return;
 		}else{
 			System.out.printf("[%d %d] CheckHeartbeat from node %d",CommonState.getTime(), this.nodeId, nodeId);
