@@ -4,28 +4,28 @@ CLASSES:= $(shell find src -name '*.java')
 all: $(CLASSES)
 	javac -classpath src:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar $(CLASSES) -Xlint:unchecked -d bin
 
-random: all
+random:
 	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator config/config_file_randomKill_dominoFalse.cfg
 
-random_domino: all
-	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator 	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator config/config_file_randomKill_dominoTrue.cfg
+random_domino:
+	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator config/config_file_randomKill_dominoTrue.cfg
 
-rollbackkill: all
-	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator 	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator config/config_file_rollbackKill_dominoFalse.cfg
+rollbackkill:
+	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator config/config_file_rollbackKill_dominoFalse.cfg
 
-rollbackkill_domino: all
-	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator 	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator config/config_file_rollbackKill_dominoTrue.cfg
+rollbackkill_domino:
+	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar peersim/Simulator config/config_file_rollbackKill_dominoTrue.cfg
 
-visual_random: all
+visual_random:
 	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar araproject/Visualizer config/config_file_randomKill_dominoFalse.cfg
 
-visual_random_domino: all
+visual_random_domino:
 	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar araproject/Visualizer config/config_file_randomKill_dominoTrue.cfg
 
-visual_rollbackkill: all
- 	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar araproject/Visualizer config/config_file_rollbackKill_dominoFalse.cfg
+visual_rollbackkill:
+	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar araproject/Visualizer config/config_file_rollbackKill_dominoFalse.cfg
 
-visual_rollbackkill_domino: all
+visual_rollbackkill_domino:
 	java -classpath bin:lib/jep-2.3.0.jar:lib/djep-1.0.0.jar:lib/peersim-1.0.5.jar:lib/jgraphx.jar araproject/Visualizer config/config_file_rollbackKill_dominoTrue.cfg
 
 clean:
