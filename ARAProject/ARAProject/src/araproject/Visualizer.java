@@ -124,11 +124,13 @@ public class Visualizer extends JFrame {
 	}
 
 	public static void rollbackstart(int from) {
-		// We may have lost messages sent by others while dead that may do bad things, so we clear our pending messages
+		// We may have lost messages sent by others while dead that may do bad
+		// things, so we clear our pending messages
 		pendingMsg.get(from).clear();
 		nodes.add(new Event(CommonState.getTime(), from, 0, Message.Type.ROLLBACKSTART));
 	}
-	public static void kill(int from){
+
+	public static void kill(int from) {
 		nodes.add(new Event(CommonState.getTime(), from, 0, Message.Type.KILL));
 	}
 
@@ -147,11 +149,13 @@ public class Visualizer extends JFrame {
 		try {
 			Object[] olds = new Object[size];
 			Object prev = null;
+			// Draw the time
 			for (int i = 0; i <= 3600; i += 10) {
 				Object o = graph.insertVertex(parent, null, i, hOffset + i * hStep, 10, hSize, vSize, mxConstants.STYLE_SHAPE + "=" + mxConstants.SHAPE_HEXAGON + ";" + mxConstants.STYLE_FILLCOLOR + "=#cccccc");
 				graph.insertEdge(parent, null, "", prev, o, mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE);
 				prev = o;
 			}
+			// Draw the logged events
 			for (Event e : nodes) {
 				String nodeStyle = "";
 				if (e.getType() == Message.Type.CHECKPOINT) {
@@ -160,11 +164,11 @@ public class Visualizer extends JFrame {
 					nodeStyle = mxConstants.STYLE_FILLCOLOR + "=#ff8800";
 				} else if (e.getType() == Message.Type.ROLLBACKSTART) {
 					nodeStyle = mxConstants.STYLE_FILLCOLOR + "=#ff0000";
-				} else if (e.getType() == Message.Type.KILL){
+				} else if (e.getType() == Message.Type.KILL) {
 					// Draw a cross at crash point
 					nodeStyle = mxConstants.STYLE_STROKECOLOR + "=#ff0000;" + mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE;
 					Object a = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep - 5, vOffset + e.getNode() * vStep - 5, 0, 0);
-					Object b = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep + hSize + 5, vOffset  + e.getNode() * vStep + vSize + 5, 0, 0);
+					Object b = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep + hSize + 5, vOffset + e.getNode() * vStep + vSize + 5, 0, 0);
 					graph.insertEdge(parent, null, null, a, b, nodeStyle);
 					a = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep + hSize + 5, vOffset + e.getNode() * vStep - 5, 0, 0);
 					b = graph.insertVertex(parent, null, null, hOffset + e.getT() * hStep - 5, vOffset + e.getNode() * vStep + vSize + 5, 0, 0);
@@ -180,16 +184,17 @@ public class Visualizer extends JFrame {
 				olds[e.getNode()] = o;
 			}
 
+			// Draw the sent messages
 			for (Msg m : messages) {
 				Object a = graph.insertVertex(parent, null, null, hOffset + hSize + m.gettE() * hStep, vOffset + vSize / 2 + m.getNodeE() * vStep, 0, 0);
 				Object b = graph.insertVertex(parent, null, null, hOffset + m.gettR() * hStep, vOffset + vSize / 2 + m.getNodeR() * vStep, 0, 0);
 				graph.insertEdge(parent, null, null, a, b);
 			}
-		      for(int i = 0; i < size; i++){
-		    	  Object a = graph.insertVertex(parent, null, "", hOffset + hSize + 3600 * hStep, vOffset + vSize/2 + i * vStep, 0, 0);
-		    			  graph.insertEdge(parent, null, null, olds[i], a,
-				    			  mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE);
-		      }
+			// Draw the end of the line
+			for (int i = 0; i < size; i++) {
+				Object a = graph.insertVertex(parent, null, "", hOffset + hSize + 3600 * hStep, vOffset + vSize / 2 + i * vStep, 0, 0);
+				graph.insertEdge(parent, null, null, olds[i], a, mxConstants.STYLE_ENDARROW + "=" + mxConstants.NONE);
+			}
 
 		} finally {
 			graph.getModel().endUpdate();

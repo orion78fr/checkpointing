@@ -3,10 +3,10 @@ package araproject;
 import peersim.config.Configuration;
 
 public class Constants {
-	private Constants(){
+	private Constants() {
 		throw new RuntimeException();
 	}
-	
+
 	private static double probaUnicast;
 	private static double probaBroadcast;
 	private static int stepDelayMin;
@@ -20,26 +20,26 @@ public class Constants {
 	private static int heartbeatMargin;
 	private static int firstHeartbeat;
 	private static int test;
-	
-	public static void loadConstants(){
+
+	public static void loadConstants() {
 		probaUnicast = Configuration.getDouble("simulation.probaUnicast");
 		probaBroadcast = Configuration.getDouble("simulation.probaBroadcast");
-		
+
 		stepDelayMin = Configuration.getInt("simulation.stepDelayMin");
 		stepDelayMax = Configuration.getInt("simulation.stepDelayMax");
 		checkpointDelayMin = Configuration.getInt("simulation.checkpointDelayMin");
 		checkpointDelayMax = Configuration.getInt("simulation.checkpointDelayMax");
-		
+
 		restartDelay = Configuration.getInt("simulation.restartDelay");
-		
+
 		isDomino = Configuration.getBoolean("simulation.isDomino");
-		
+
 		outputFile = Configuration.getString("simulation.outputFile", null);
-		
+
 		heartbeatDelay = Configuration.getInt("simulation.heartbeatDelay");
 		heartbeatMargin = Configuration.getInt("simulation.heartbeatMargin");
 		firstHeartbeat = Configuration.getInt("simulation.firstHeartbeat");
-		
+
 		test = Configuration.getInt("simulation.test");
 	}
 
@@ -78,20 +78,20 @@ public class Constants {
 	public static int getRestartDelay() {
 		return restartDelay;
 	}
-	
+
 	public static int getHeartbeatDelay() {
 		return heartbeatDelay;
 	}
-	
-	public static int getHeartbeatMargin(){
+
+	public static int getHeartbeatMargin() {
 		return heartbeatMargin;
 	}
-	
-	public static int getFirstHeartbeat(){
+
+	public static int getFirstHeartbeat() {
 		return firstHeartbeat;
 	}
-	
-	public static int getTest(){
+
+	public static int getTest() {
 		return test;
 	}
 }

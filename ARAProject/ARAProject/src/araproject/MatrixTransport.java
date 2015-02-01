@@ -10,13 +10,13 @@ public class MatrixTransport implements Protocol {
 
 	public MatrixTransport(String prefix) {
 		System.out.println("Transport Layer Enabled");
-		
+
 		int size = Network.size();
 		matrix = new long[size][];
-		for(int i = 0; i < size; i++){
+		for (int i = 0; i < size; i++) {
 			matrix[i] = new long[size];
-			for(int j = 0; j < size; j++){
-				matrix[i][j] = Math.abs(i-j);
+			for (int j = 0; j < size; j++) {
+				matrix[i][j] = Math.abs(i - j);
 			}
 		}
 	}
