@@ -215,7 +215,7 @@ public class App implements EDProtocol {
 
 		System.out.printf("[%d %d] ROLLBACK - Initiating rollback n°%d (State : %d -> %d)\n", CommonState.getTime(), this.nodeId, this.rollbackNbr, this.state, c.getState());
 
-		Visualizer.rollbackstart(this.nodeId);
+		Visualizer.rollbackstart(this.nodeId, this.rollbackNbr);
 		rollbackTo(c);
 
 		planRestart();

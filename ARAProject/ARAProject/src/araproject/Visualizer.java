@@ -123,11 +123,11 @@ public class Visualizer extends JFrame {
 		nodes.add(new Event(CommonState.getTime(), from, num, Message.Type.ROLLBACKSTEP));
 	}
 
-	public static void rollbackstart(int from) {
+	public static void rollbackstart(int from, int num) {
 		// We may have lost messages sent by others while dead that may do bad
 		// things, so we clear our pending messages
 		pendingMsg.get(from).clear();
-		nodes.add(new Event(CommonState.getTime(), from, 0, Message.Type.ROLLBACKSTART));
+		nodes.add(new Event(CommonState.getTime(), from, num, Message.Type.ROLLBACKSTART));
 	}
 
 	public static void kill(int from) {
