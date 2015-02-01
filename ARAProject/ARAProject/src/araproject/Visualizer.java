@@ -202,7 +202,7 @@ public class Visualizer extends JFrame {
 	}
 
 	public static void main(String[] args) {
-		peersim.Simulator.main(new String[] { "config_file.cfg" });
+		peersim.Simulator.main(args);
 		JFrame frame = new Visualizer();
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setSize(800, 600);
