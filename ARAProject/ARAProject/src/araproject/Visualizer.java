@@ -12,7 +12,6 @@ import peersim.core.CommonState;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.view.mxGraph;
-import com.sun.xml.internal.bind.v2.Messages;
 
 public class Visualizer extends JFrame {
 	private static final long serialVersionUID = 2107967669924972959L;
